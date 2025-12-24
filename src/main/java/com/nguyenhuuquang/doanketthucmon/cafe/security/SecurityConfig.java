@@ -33,7 +33,10 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
-                        // 🔓 Public
+                        // 🔓 CRITICAL: Health checks MUST be FIRST!
+                        .requestMatchers("/", "/health", "/ping", "/actuator/**").permitAll()
+
+                        // 🔓 Public - Auth, uploads, payment
                         .requestMatchers("/api/auth/**", "/uploads/**", "/api/payment/**").permitAll()
 
                         // 🔓 GET công khai (menu, danh mục, sản phẩm)
@@ -42,8 +45,9 @@ public class SecurityConfig {
                                 "/api/products/**",
                                 "/api/promotions/**")
                         .permitAll()
+
                         // 🧾 BILLS - ĐẶT TRƯỚC CÁC QUY TẮC KHÁC
-                        .requestMatchers(HttpMethod.GET, "/api/bills/**").permitAll() // ✅ Cho phép GET public
+                        .requestMatchers(HttpMethod.GET, "/api/bills/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/bills/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers(HttpMethod.PUT, "/api/bills/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers(HttpMethod.DELETE, "/api/bills/**").hasRole("ADMIN")
@@ -57,7 +61,6 @@ public class SecurityConfig {
                         .hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers(HttpMethod.DELETE, "/api/tables/**", "/api/orders/**")
                         .hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/orders/**").hasRole("ADMIN")
 
                         // 🧑‍💼 ADMIN-only: quản lý danh mục, sản phẩm, khuyến mãi
                         .requestMatchers(HttpMethod.POST,
