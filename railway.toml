@@ -4,7 +4,6 @@ buildCommand = "mvn clean package -DskipTests"
 [deploy]
 startCommand = "java -Xmx512m -Xms256m -jar target/*.jar"
 restartPolicyType = "ON_FAILURE"
-healthcheckPath = "/health"
 healthcheckTimeout = 300
 
 [build.environment]
