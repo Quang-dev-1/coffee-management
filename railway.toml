@@ -2,12 +2,16 @@
 buildCommand = "mvn clean package -DskipTests"
 
 [deploy]
-startCommand = "java -jar target/*.jar"
+startCommand = "java -Xmx512m -Xms256m -jar target/*.jar"
 restartPolicyType = "ON_FAILURE"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
 
 [build.environment]
 JAVA_VERSION = "21"
+MAVEN_OPTS = "-Xmx512m"
 
 [deploy.environment]
 PORT = "8080"
 SPRING_PROFILES_ACTIVE = "production"
+
