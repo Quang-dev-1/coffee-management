@@ -31,45 +31,53 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        // ⚠️ Skip JWT cho health endpoints
         String path = request.getRequestURI();
+
+        // ✅ Bỏ qua JWT cho các endpoint PUBLIC
         if (path.equals("/") ||
                 path.equals("/health") ||
                 path.equals("/ping") ||
-                path.startsWith("/actuator")) {
+                path.startsWith("/actuator") ||
+                path.startsWith("/api/auth/") || // ← QUAN TRỌNG: Cho phép login/register
+                path.startsWith("/uploads/") ||
+                path.startsWith("/api/payment/") ||
+                path.equals("/favicon.ico")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         final String authorizationHeader = request.getHeader("Authorization");
-
         String username = null;
         String jwt = null;
 
+        // Trích xuất JWT từ header
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwt = authorizationHeader.substring(7);
             try {
                 username = jwtUtil.extractUsername(jwt);
             } catch (Exception e) {
-                System.err.println("JWT extraction error: " + e.getMessage());
+                System.err.println("❌ JWT extraction error: " + e.getMessage());
             }
         }
 
+        // Validate JWT và set authentication
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+            try {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
-            // ✅ SỬA: Chỉ dùng 1 tham số thay vì 2
-            if (jwtUtil.validateToken(jwt)) {
-                // ✅ Kiểm tra thêm: username từ token phải khớp với userDetails
-                String tokenUsername = jwtUtil.extractUsername(jwt);
-                if (tokenUsername.equals(userDetails.getUsername())) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities());
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                if (jwtUtil.validateToken(jwt)) {
+                    String tokenUsername = jwtUtil.extractUsername(jwt);
+                    if (tokenUsername.equals(userDetails.getUsername())) {
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities());
+                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    }
                 }
+            } catch (Exception e) {
+                System.err.println("❌ Authentication error: " + e.getMessage());
             }
         }
 
