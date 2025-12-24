@@ -1,0 +1,16 @@
+[build]
+builder = "maven"
+buildCommand = "mvn clean package -DskipTests"
+buildPath = "."
+
+[deploy]
+startCommand = "java -jar target/*.jar"
+healthcheckPath = "/actuator/health"
+restartPolicyType = "ON_FAILURE"
+
+[build.environment]
+JAVA_VERSION = "17"
+
+[deploy.environment]
+PORT = "8080"
+SPRING_PROFILES_ACTIVE = "production"
